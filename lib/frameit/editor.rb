@@ -163,6 +163,9 @@ module Frameit
       sum_width = title.width
       sum_width += keyword.width + keyword_padding if keyword
 
+      title_height = title.height
+      title_height = keyword.height if keyword && keyword.height > title_height
+
       # Resize the 2 labels if necessary
       smaller = 1.0 # default
       ratio = (sum_width + keyword_padding * 2) / image.width.to_f
@@ -174,10 +177,12 @@ module Frameit
 
         title.resize "#{(smaller * title.width).round}x"
         keyword.resize "#{(smaller * keyword.width).round}x" if keyword
+
         sum_width *= smaller
+        title_height *= smaller
       end
 
-      top_space = (top_space_above_device / 2.0 - (actual_font_size / 2.0 * smaller)).round # centered
+      top_space = (top_space_above_device / 2.0 - (title_height / 2.0)).round # centered
       left_space = (image.width / 2.0 - sum_width / 2.0).round
 
       # First, put the keyword on top of the screenshot, if we have one
@@ -200,7 +205,8 @@ module Frameit
     # rubocop:enable Metrics/AbcSize
 
     def actual_font_size
-      [top_space_above_device / 3.0, @image.width / 30.0].max.round
+      fontSize = fetch_config['fontSize']
+      fontSize || [top_space_above_device / 3.0, @image.width / 30.0].max.round
     end
 
     # The space between the keyword and the title
@@ -216,15 +222,15 @@ module Frameit
         # Create empty background
         empty_path = File.join(Helper.gem_path('frameit'), "lib/assets/empty.png")
         title_image = MiniMagick::Image.open(empty_path)
-        image_height = actual_font_size * 2 # gets trimmed afterwards anyway, and on the iPad the `y` would get cut
+        image_height = actual_font_size * 3 # gets trimmed afterwards anyway, and on the iPad the `y` would get cut
         title_image.combine_options do |i|
-          # * 2.0 as the text might be larger than the actual image. We're trimming afterwards anyway
-          i.resize "#{max_width * 2.0}x#{image_height}!" # `!` says it should ignore the ratio
+          # * 3.0 as the text might be larger than the actual image. We're trimming afterwards anyway
+          i.resize "#{max_width * 3.0}x#{image_height}!" # `!` says it should ignore the ratio
         end
 
         current_font = font(key)
         text = fetch_text(key)
-        Helper.log.debug "Using #{current_font} as font the #{key} of #{screenshot.path}" if $verbose and current_font
+        Helper.log.debug "Using #{current_font} at size #{actual_font_size} for the #{key} of #{screenshot.path}" if $verbose and current_font
         Helper.log.debug "Adding text '#{text}'" if $verbose
 
         # Add the actual title
