@@ -205,8 +205,9 @@ module Frameit
     # rubocop:enable Metrics/AbcSize
 
     def actual_font_size
+      density = self.screenshot.triple_density? ? 3 : 2
       fontSize = fetch_config['fontSize']
-      fontSize || [top_space_above_device / 3.0, @image.width / 30.0].max.round
+      fontSize * density || [top_space_above_device / 3.0, @image.width / 30.0].max.round
     end
 
     # The space between the keyword and the title
