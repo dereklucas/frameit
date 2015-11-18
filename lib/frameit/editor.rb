@@ -87,6 +87,8 @@ module Frameit
     def complex_framing
       background = generate_background
 
+      @image = add_gloss
+
       if self.frame # we have no frame on le mac
         resize_frame!
         @image = put_into_frame
@@ -247,6 +249,22 @@ module Frameit
         results[key] = title_image
       end
       results
+    end
+
+    # adds gloss to screenshot
+    def add_gloss
+      return @image unless fetch_config['addGloss'] == true
+
+      gloss_path = File.join(Helper.gem_path('frameit'), "lib/assets/gloss.png")
+      gloss = MiniMagick::Image.open(gloss_path)
+      gloss.resize "#{image.width * 0.7}x#{image.height * 0.69}!"
+
+      @image = image.composite(gloss, "png") do |c|
+        c.compose "Over"
+        c.gravity "NorthEast"
+      end
+
+      return @image
     end
 
     # Loads the config (colors, background, texts, etc.)
